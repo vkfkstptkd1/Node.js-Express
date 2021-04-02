@@ -2,6 +2,8 @@ const express = require('express') //이 모듈은 고정될 것이므로 const 
 const app = express()
 var fs = require('fs');
 var template = require('./lib/template.js');
+var path = require('path');
+var sanitizeHtml = require('sanitize-html');
 
 //rout,routing ==>기존에 if문을 통해 처리하는거랑 비슷함.
 //app.get('/', (req, res) => res.send('hello world'))
@@ -19,9 +21,29 @@ app.get('/', function(request, response) { //homepage
     })
     //app.listen(3000, () => console.log('Example app listening on port 3000!'))
 
-app.get('/page/:pageId', function(request, response) {
-    return response.send(request.params);
-})
+app.get('/page/:pageId', function(request, response) { //querystring이 아닌 path로 전달
+    fs.readdir('./data', function(error, filelist) {
+        var filteredId = path.parse(request.params.pageId).base;
+        fs.readFile(`data/${filteredId}`, 'utf8', function(err, description) {
+            var title = request.params.pageId;
+            var sanitizedTitle = sanitizeHtml(title);
+            var sanitizedDescription = sanitizeHtml(description, {
+                allowedTags: ['h1']
+            });
+            var list = template.list(filelist);
+            var html = template.HTML(sanitizedTitle, list,
+                `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
+                ` <a href="/create">create</a>
+            <a href="/update?id=${sanitizedTitle}">update</a>
+            <form action="delete_process" method="post">
+              <input type="hidden" name="id" value="${sanitizedTitle}">
+              <input type="submit" value="delete">
+            </form>`
+            );
+            response.send(html);
+        });
+    });
+});
 app.listen(3000, function() {
     console.log('Example app listening on port 3000!')
 })
@@ -40,17 +62,6 @@ app.listen(3000, function() {
         var pathname = url.parse(_url, true).pathname;
         if(pathname === '/'){
           if(queryData.id === undefined){
-            fs.readdir('./data', function(error, filelist){
-              var title = 'Welcome';
-              var description = 'Hello, Node.js';
-              var list = template.list(filelist);
-              var html = template.HTML(title, list,
-                `<h2>${title}</h2>${description}`,
-                `<a href="/create">create</a>`
-              );
-              response.writeHead(200);
-              response.end(html);
-            });
           } else {
             fs.readdir('./data', function(error, filelist){
               var filteredId = path.parse(queryData.id).base;
