@@ -18,6 +18,10 @@ app.get('/', function(request, response) { //homepage
         });
     })
     //app.listen(3000, () => console.log('Example app listening on port 3000!'))
+
+app.get('/page/:pageId', function(request, response) {
+    return response.send(request.params);
+})
 app.listen(3000, function() {
     console.log('Example app listening on port 3000!')
 })
