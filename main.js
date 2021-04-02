@@ -1,10 +1,21 @@
 const express = require('express') //이 모듈은 고정될 것이므로 const 를 씀. 근데 var써두댐
 const app = express()
+var fs = require('fs');
+var template = require('./lib/template.js');
 
 //rout,routing ==>기존에 if문을 통해 처리하는거랑 비슷함.
 //app.get('/', (req, res) => res.send('hello world'))
-app.get('/', function(req, res) {
-        return res.send('/');
+app.get('/', function(request, response) { //homepage
+        fs.readdir('./data', function(error, filelist) { //dadta디렉터리 파일가져오기
+            var title = 'Welcome';
+            var description = 'Hello, Node.js';
+            var list = template.list(filelist);
+            var html = template.HTML(title, list,
+                `<h2>${title}</h2>${description}`,
+                `<a href="/create">create</a>`
+            );
+            response.send(html);
+        });
     })
     //app.listen(3000, () => console.log('Example app listening on port 3000!'))
 app.listen(3000, function() {
