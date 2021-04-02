@@ -4,6 +4,7 @@ var fs = require('fs');
 var template = require('./lib/template.js');
 var path = require('path');
 var sanitizeHtml = require('sanitize-html');
+var qs = require('querystring');
 
 //rout,routing ==>기존에 if문을 통해 처리하는거랑 비슷함.
 //app.get('/', (req, res) => res.send('hello world'))
@@ -35,7 +36,7 @@ app.get('/page/:pageId', function(request, response) { //querystring이 아닌 p
                 `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
                 ` <a href="/create">create</a>
             <a href="/update?id=${sanitizedTitle}">update</a>
-            <form action="delete_process" method="post">
+            <form action="/delete_process" method="post">
               <input type="hidden" name="id" value="${sanitizedTitle}">
               <input type="submit" value="delete">
             </form>`
@@ -119,9 +120,23 @@ app.post('/update_process', function(request, response) {
         var description = post.description;
         fs.rename(`data/${id}`, `data/${title}`, function(error) {
             fs.writeFile(`data/${title}`, description, 'utf8', function(err) {
-                response.writeHead(302, { Location: `/?id=${title}` });
-                response.end();
+                response.redirect('/?id=${title}');
             })
+        });
+    });
+});
+
+app.post('/delete_process', function(request, response) {
+    var body = '';
+    request.on('data', function(data) {
+        body = body + data;
+    });
+    request.on('end', function() {
+        var post = qs.parse(body);
+        var id = post.id;
+        var filteredId = path.parse(id).base;
+        fs.unlink(`data/${filteredId}`, function(error) {
+            response.redirect('/');
         });
     });
 });
